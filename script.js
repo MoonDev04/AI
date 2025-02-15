@@ -12,6 +12,20 @@ function sendMessage() {
     addMessage(userInput, 'user');
     document.getElementById('user-input').value = '';
 
+    // Decide whether to use OpenAI or Bing Search API based on the user input
+    if (isCodeQuery(userInput)) {
+        fetchOpenAIResponse(userInput);
+    } else {
+        fetchBingSearchResults(userInput);
+    }
+}
+
+function isCodeQuery(query) {
+    const codeKeywords = ['code', 'script', 'program', 'function', 'algorithm'];
+    return codeKeywords.some(keyword => query.toLowerCase().includes(keyword));
+}
+
+function fetchOpenAIResponse(userInput) {
     fetch('https://api.openai.com/v1/completions', {
         method: 'POST',
         headers: {
@@ -31,6 +45,25 @@ function sendMessage() {
     })
     .catch(error => {
         console.error('Error:', error);
+        addMessage('Sorry, something went wrong!', 'bot');
+    });
+}
+
+function fetchBingSearchResults(userInput) {
+    fetch(`https://api.bing.microsoft.com/v7.0/search?q=${encodeURIComponent(userInput)}`, {
+        method: 'GET',
+        headers: {
+            'Ocp-Apim-Subscription-Key': 'YOUR_BING_API_KEY'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        const results = data.webPages.value.map(page => `${page.name}: ${page.url}`).join('\n\n');
+        addMessage(results, 'bot');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        addMessage('Sorry, something went wrong!', 'bot');
     });
 }
 
